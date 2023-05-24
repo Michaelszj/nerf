@@ -9,9 +9,7 @@ from voxel import *
 path = 'Lego/pose/0_00'
 appendix = '.txt'
 pixels = None
-c2w = None
-rays = None
-origins = None
+
 image = None
 
 
@@ -60,9 +58,9 @@ def load_mat():
         pose = np.loadtxt(pose_path, dtype=np.float32)
 
         # Append the image and its corresponding label to the output
-        mats.append(pose)
 
-    mats = np.array(mats, dtype='float32')
+        mats.append(pose)
+    mats = np.array(mats)
     data = ti.Matrix.field(4, 4, ti.f32, shape=mats.shape[0])
     data.from_numpy(mats)
 
@@ -70,14 +68,14 @@ def load_mat():
 
 
 @ti.func
-def mul(mat: mat4, vec: vec3):
-    return vec3(mat[0][0]*vec[0]+mat[0][1]*vec[1]+mat[0][2]*vec[2]+mat[0][3],
-                mat[1][0]*vec[1]+mat[1][1]*vec[1]+mat[1][2]*vec[2]+mat[1][3],
-                mat[2][0]*vec[0]+mat[2][1]*vec[1]+mat[2][2]*vec[2]+mat[2][3])
+def mul(vec: vec3, mat: mat4):
+    return vec3(mat[0, 0]*vec[0]+mat[0, 1]*vec[1]+mat[0, 2]*vec[2]+mat[0, 3],
+                mat[1, 0]*vec[1]+mat[1, 1]*vec[1]+mat[1, 2]*vec[2]+mat[1, 3],
+                mat[2, 0]*vec[0]+mat[2, 1]*vec[1]+mat[2, 2]*vec[2]+mat[2, 3])
 
 
 @ti.kernel
-def calRays(index: int):
+def calRays(index: int, rays: ti.template(), c2w: ti.template(), origins: ti.template()):
     origins[index] = mul(vec3(0.0, 0.0, 0.0), c2w[index])
     for i, j in ti.ndrange(800, 800):
         rays[index, i, j] = tm.normalize(

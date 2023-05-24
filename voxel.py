@@ -99,7 +99,7 @@ class Camera:
                     paras = vec13(0.0)
                     for k in ti.static(range(8)):
                         paras += self.scene.content[x+k % 2, y+k//2 % 2, z+k//4 % 2]*vol[k]
-                    tempColor, weight = SH_forward(paras, ray, weight)
+                    tempColor, weight = SH_forward(paras, -ray, weight)
                     color += tempColor
                     dis += stride_length
                 color += ray*weight

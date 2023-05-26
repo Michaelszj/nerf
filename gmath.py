@@ -7,7 +7,7 @@ vec13 = ti.types.vector(13, ti.f32)
 mat3 = ti.types.matrix(3, 3, ti.f32)
 mat4 = ti.types.matrix(4, 4, ti.f32)
 stride_length = 0.5
-grid_l = 240
+grid_l = 300
 half_l = grid_l//2
 l = grid_l/2-0.6
 

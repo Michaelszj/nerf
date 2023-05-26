@@ -9,8 +9,9 @@ from voxel import *
 path = 'Lego/pose/0_00'
 appendix = '.txt'
 pixels = None
-
+img_shape = (800, 800)
 image = None
+scale = 70.0
 
 
 def load_data():
@@ -38,7 +39,8 @@ def load_data():
         data = ti.field(ti.f32, shape=image.shape)
         data.from_numpy(image)
         images.append(data)
-
+    img_shape = (images[0].shape[0], images[0].shape[1])
+    print('%d images loaded successfully with the shape of (%d, %d)' % (len(images), img_shape[0], img_shape[1]))
     return images
 
 
@@ -63,6 +65,7 @@ def load_mat():
     mats = np.array(mats)
     data = ti.Matrix.field(4, 4, ti.f32, shape=mats.shape[0])
     data.from_numpy(mats)
+    print('%d matrices loaded successfully' % (data.shape[0]))
 
     return data
 
@@ -76,10 +79,10 @@ def mul(vec: vec3, mat: mat4):
 
 @ti.kernel
 def calRays(index: int, rays: ti.template(), c2w: ti.template(), origins: ti.template()):
-    origins[index] = mul(vec3(0.0, 0.0, 0.0), c2w[index])
-    for i, j in ti.ndrange(800, 800):
+    origins[index] = mul(vec3(0.0, 0.0, 0.0), c2w[index])*scale
+    for i, j in ti.ndrange(img_shape[0], img_shape[1]):
         rays[index, i, j] = tm.normalize(
-            mul(vec3((ti.cast(i, ti.f32)-399.5)/400.0, (ti.cast(j, ti.f32)-399.5)/400.0, 1.0), c2w[index])-origins[index])
+            mul(vec3((ti.cast(i, ti.f32)-399.5)/400.0, (ti.cast(j, ti.f32)-399.5)/400.0, 1.0), c2w[index])*scale-origins[index])
 
 
 if __name__ == '__main__':

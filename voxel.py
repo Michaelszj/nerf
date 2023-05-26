@@ -5,7 +5,7 @@ import random
 import numpy as np
 import math
 from gmath import *
-ti.init(arch=ti.gpu, debug=False, device_memory_GB=3)
+ti.init(arch=ti.gpu, debug=False, device_memory_GB=4)
 
 
 window_shape = (640, 480)
@@ -135,6 +135,32 @@ class Camera:
     def display(self):
         self.gui.set_image(self.image)
         self.gui.show()
+
+
+@ti.kernel
+def renderBuffer(buffer: ti.template(), scene: ti.template(), origins: ti.template(), rays: ti.template(), index: int):
+    pos = origins[index]
+    for i, j in buffer:
+        ray = rays[index, i, j]
+        tmin, tmax = enterBox(pos, ray)
+        dis = 0.0
+        point = vec3(0.0)
+        weight = 1.0
+        color = vec3(0.0)
+        if (tmin >= tmax) or (tmax < 0.0):
+            buffer[i, j] = vec3(0.)
+        else:
+            dis = tmin+0.1
+            while (dis < tmax):
+                point = pos+dis*ray
+                x, y, z, vol = toGridLerp(point)
+                paras = vec13(0.0)
+                for k in ti.static(range(8)):
+                    paras += scene[x+k % 2, y+k//2 % 2, z+k//4 % 2]*vol[k]
+                tempColor, weight = SH_forward(paras, -ray, weight)
+                color += tempColor
+                dis += stride_length
+            buffer[i, j] = color
 
 
 if __name__ == '__main__':

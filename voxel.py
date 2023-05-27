@@ -18,7 +18,7 @@ class voxel_system:
             13, dtype=ti.float32, shape=(grid_l, grid_l, grid_l))
 
     @ti.kernel
-    def random_init(self):
+    def circle_init(self):
         for i, j, k in self.content:
             for l in ti.static(range(13)):
                 if l == 2:
@@ -29,6 +29,15 @@ class voxel_system:
                     self.content[i, j, k][l] = (ti.random()-0.5)/40
                 if sum(tm.pow(vec3((i/half_l)-1, (j/half_l)-1, (k/half_l)-1), 2)) > 1.0:
                     self.content[i, j, k][l] /= 5
+
+    @ti.kernel
+    def random_init(self):
+        for i, j, k in self.content:
+            for l in ti.static(range(13)):
+                if l == 12:
+                    self.content[i, j, k][l] = ti.random()/4
+                else:
+                    self.content[i, j, k][l] = (ti.random()-0.5)/2
 
 
 @ti.data_oriented

@@ -11,7 +11,8 @@ appendix = '.txt'
 pixels = None
 img_shape = (800, 800)
 image = None
-scale = 70.0
+scale = 150.0
+intrinsic = 1111.1110311937682
 
 
 def load_data():
@@ -72,17 +73,18 @@ def load_mat():
 
 @ti.func
 def mul(vec: vec3, mat: mat4):
-    return vec3(mat[0, 0]*vec[0]+mat[0, 1]*vec[1]+mat[0, 2]*vec[2]+mat[0, 3],
-                mat[1, 0]*vec[1]+mat[1, 1]*vec[1]+mat[1, 2]*vec[2]+mat[1, 3],
-                mat[2, 0]*vec[0]+mat[2, 1]*vec[1]+mat[2, 2]*vec[2]+mat[2, 3])
+    return vec3(mat[0, 0]*vec[0]+mat[0, 1]*vec[1]+mat[0, 2]*vec[2],
+                mat[1, 0]*vec[0]+mat[1, 1]*vec[1]+mat[1, 2]*vec[2],
+                mat[2, 0]*vec[0]+mat[2, 1]*vec[1]+mat[2, 2]*vec[2])
 
 
 @ti.kernel
 def calRays(index: int, rays: ti.template(), c2w: ti.template(), origins: ti.template()):
-    origins[index] = mul(vec3(0.0, 0.0, 0.0), c2w[index])*scale
+    origins[index] = vec3(-c2w[index][0, 3], c2w[index][2, 3], -c2w[index][1, 3])*scale
     for i, j in ti.ndrange(img_shape[0], img_shape[1]):
-        rays[index, i, j] = tm.normalize(
-            mul(vec3((ti.cast(i, ti.f32)-399.5)/400.0, (ti.cast(j, ti.f32)-399.5)/400.0, 1.0), c2w[index])*scale-origins[index])
+        temp = tm.normalize(
+            mul(vec3((ti.cast(i, ti.f32)-399.5)/intrinsic, -(ti.cast(j, ti.f32)-399.5)/intrinsic, 1.0), c2w[index]))
+        rays[index, i, j] = vec3(-temp[0], temp[2], -temp[1])
 
 
 if __name__ == '__main__':

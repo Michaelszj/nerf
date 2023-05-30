@@ -1,6 +1,8 @@
 import taichi as ti
 import taichi.math as tm
 
+ti.init(arch=ti.gpu, debug=False, device_memory_GB=5, default_fp=ti.f32)
+
 vec3 = ti.types.vector(3, ti.f32)
 vec8 = ti.types.vector(8, ti.f32)
 vec13 = ti.types.vector(13, ti.f32)
@@ -10,6 +12,8 @@ stride_length = 0.5
 grid_l = 300
 half_l = grid_l//2
 l = grid_l/2-0.6
+loss = ti.field(ti.f32, shape=())
+loss[None] = 0.0
 
 
 @ti.func
@@ -24,9 +28,8 @@ def SH_forward(p, d, w):
     color[1] = p[1]+p[4]*d[0]+p[7]*d[1]+p[10]*d[2]
     color[2] = p[2]+p[5]*d[0]+p[8]*d[1]+p[11]*d[2]
     color *= w
-    w *= tm.pow(1-p[12], stride_length)
 
-    return color, w
+    return color, w*tm.pow(1.00001-p[12], stride_length)
 
 
 @ti.func
@@ -94,3 +97,12 @@ def toGridLerp(v):
     t1 = 1-vt[1]
     t2 = 1-vt[2]
     return x, y, z, vec8(t0*t1*t2, vt[0]*t1*t2, t0*vt[1]*t2, vt[0]*vt[1]*t2, t0*t1*vt[2], vt[0]*t1*vt[2], t0*vt[1]*vt[2], vt[0]*vt[1]*vt[2])
+
+
+@ti.kernel
+def calLoss(buffer: ti.template(), pixel: ti.template()):
+    for i, j in buffer:
+        dx = (buffer[i, j][0]-pixel[i, j, 0]*pixel[i, j, 3])
+        dy = (buffer[i, j][1]-pixel[i, j, 1]*pixel[i, j, 3])
+        dz = (buffer[i, j][2]-pixel[i, j, 2]*pixel[i, j, 3])
+        loss[None] += dx*dx+dy*dy+dz*dz

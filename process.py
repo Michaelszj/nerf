@@ -11,7 +11,7 @@ appendix = '.txt'
 pixels = None
 img_shape = (800, 800)
 image = None
-scale = 150.0
+scale = 130.0
 intrinsic = 1111.1110311937682
 
 
@@ -37,7 +37,7 @@ def load_data():
         # Append the image and its corresponding label to the output
         image = np.array(image, dtype='float32')
         image /= 255.0
-        data = ti.field(ti.f32, shape=image.shape)
+        data = ti.Vector.field(4, ti.f32, shape=(image.shape[0], image.shape[1]))
         data.from_numpy(image)
         images.append(data)
     img_shape = (images[0].shape[0], images[0].shape[1])
@@ -85,6 +85,7 @@ def calRays(index: int, rays: ti.template(), c2w: ti.template(), origins: ti.tem
         temp = tm.normalize(
             mul(vec3((ti.cast(i, ti.f32)-399.5)/intrinsic, -(ti.cast(j, ti.f32)-399.5)/intrinsic, 1.0), c2w[index]))
         rays[index, i, j] = vec3(-temp[0], temp[2], -temp[1])
+    origins[index][1] -= 40.0
 
 
 if __name__ == '__main__':

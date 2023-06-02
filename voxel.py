@@ -47,7 +47,7 @@ class voxel_system:
         for i, j, k in self.content:
             for l in ti.static(range(13)):
                 if l == 12:
-                    self.content[i, j, k][l] = 1.
+                    self.content[i, j, k][l] = 0.9
                 else:
                     self.content[i, j, k][l] = 0.
 
@@ -139,7 +139,7 @@ class Camera:
             weight = 1.0
             color = vec3(0.0)
             if (tmin >= tmax) or (tmax < 0.0):
-                self.image[i, j] = ray*0.5
+                self.image[i, j] = vec3(0.)  # ray*0.5
             else:
                 dis = tmin+0.1
                 while (dis < tmax):
@@ -152,7 +152,7 @@ class Camera:
                     color += tempColor
                     dis += stride_length
                     weight = new_weight
-                color += ray*weight
+                # color += ray*weight
                 self.image[i, j] = color
 
     # process input from mouse and keyboard
@@ -221,7 +221,7 @@ def renderBuffer_back(buffer: ti.template(), scene: ti.template(), origins: ti.t
     for i, j in buffer:
         ray = rays[index, i, j]
         color_final = buffer[i, j]
-        color_diff = color_final-real_image[i, j].xyz  # *real_image[i, j].w
+        color_diff = color_final-real_image[i, j].xyz*real_image[i, j].w
         tmin, tmax = enterBox(pos, ray)
         dis = 0.0
         point = vec3(0.0)
@@ -247,7 +247,7 @@ def renderBuffer_back(buffer: ti.template(), scene: ti.template(), origins: ti.t
                 color += tempColor
                 color_left = color_final-color
                 temp_grad = ref_grad*weight*(paras[12])
-                temp_grad[12] = -(color_left@color_diff)*(weight*tm.pow(1-paras[12], stride_length - 1))
+                temp_grad[12] = -(color_left@color_diff)*(weight*tm.pow(1.00001-paras[12], stride_length - 1)*paras[12])
                 if real_image[i, j].w == 0.:
                     temp_grad = vec13(10000.)
                 for k in ti.static(range(8)):

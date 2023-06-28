@@ -54,12 +54,12 @@ class voxel_system:
     @ti.kernel
     def update(self, cluster: bool):
         for i, j, k in self.content:
-            if self.grad[i, j, k][0] >= 3.:
-                if cluster == True:
-                    self.content[i, j, k] = vec13(0.)
-            else:
-                # self.grad[i, j, k][12] = 0.
-                self.content[i, j, k] -= self.grad[i, j, k]*self.lr[None]
+            # if self.grad[i, j, k][0] >= 3.:
+            #     if cluster == True:
+            #         self.content[i, j, k] = vec13(0.)
+            # else:
+            # self.grad[i, j, k][12] = 0.
+            self.content[i, j, k] -= self.grad[i, j, k]*self.lr[None]
             # if (self.grad[i, j, k][0] == 0.0):
             #     self.content[i, j, k][0] = 1.0
             for l in range(13):
@@ -247,9 +247,10 @@ def renderBuffer_back(buffer: ti.template(), scene: ti.template(), origins: ti.t
                 color += tempColor
                 color_left = color_final-color
                 temp_grad = ref_grad*weight*(paras[12])
-                temp_grad[12] = -(color_left@color_diff)*(weight*tm.pow(1.00001-paras[12], stride_length - 1)*paras[12])
-                if real_image[i, j].w == 0.:
-                    temp_grad = vec13(10000.)
+                # tm.pow(1.00001-paras[12], stride_length - 1)*paras[12])
+                temp_grad[12] = -(color_left@color_diff)*(weight/(1.00001-paras[12]))*paras[12]
+                # if real_image[i, j].w == 0.:
+                #     temp_grad = vec13(10000000.)
                 for k in ti.static(range(8)):
                     grad[x+k % 2, y+k//2 % 2, z+k//4 % 2] += temp_grad*vol[k]
                 dis += stride_length
@@ -259,26 +260,55 @@ def renderBuffer_back(buffer: ti.template(), scene: ti.template(), origins: ti.t
 @ti.kernel
 def cluster(buffer: ti.template(), origins: ti.template(), rays: ti.template(), index: int, real_image: ti.template(), grad: ti.template()):
     pos = origins[index]
-    for i, j in buffer:
-        ray = rays[index, i, j]
-        tmin, tmax = enterBox(pos, ray)
-        dis = 0.0
-        point = vec3(0.0)
-        if (tmin >= tmax) or (tmax < 0.0):
-            buffer[i, j] = vec3(0.)
-        else:
-            if tmin < 0:
-                tmin = 0.
-            dis = tmin+0.1
-            while (dis < tmax):
-                point = pos+dis*ray
-                x, y, z, vol = toGridLerp(point)
-                temp_grad = vec13(0.0)
-                if real_image[i, j].w == 0.:
-                    temp_grad = vec13(10000.)
-                    for k in ti.static(range(8)):
-                        grad[x+k % 2, y+k//2 % 2, z+k//4 % 2] = temp_grad*vol[k]
-                dis += stride_length
+    center = tm.normalize(rays[index, 0, 0]+rays[index, 799, 799])
+    up = rays[index, 0, 799]+rays[index, 799, 799]
+    right = rays[index, 799, 0]+rays[index, 799, 799]
+    right = right/tm.dot(center, right)-center
+    up = up/tm.dot(center, up)-center
+    right_d = tm.length(right)
+    up_d = tm.length(up)
+    right /= right_d
+    up /= up_d
+    for i, j, k in grad:
+        dir = vec3(i-half_l, j-half_l, k-half_l)-pos
+        center_l = tm.dot(dir, center)
+        if (center_l > 0):
+            dir = dir/center_l-center
+            right_l = tm.dot(dir, right)
+            up_l = tm.dot(dir, up)
+            x = ti.cast(ti.floor(right_l/right_d*399.5), ti.int32)+400
+            y = ti.cast(ti.floor(up_l/up_d*399.5), ti.int32)+400
+            if (x >= 0 and x <= 799 and y >= 0 and y <= 799):
+                alpha = real_image[x, y].w
+                if (alpha == 0.):
+                    if (x >= 1 and x <= 798 and y >= 1 and y <= 798):
+                        beta = (real_image[x+1, y].w+real_image[x-1, y].w+real_image[x, y+1].w+real_image[x, y-1].w)/4
+                        if grad[i, j, k][12] > beta:
+                            grad[i, j, k][12] = beta
+                    else:
+                        grad[i, j, k] = vec13(0.0)
+
+    # pos = origins[index]
+    # for i, j in buffer:
+    #     ray = rays[index, i, j]
+    #     tmin, tmax = enterBox(pos, ray)
+    #     dis = 0.0
+    #     point = vec3(0.0)
+    #     if (tmin >= tmax) or (tmax < 0.0):
+    #         buffer[i, j] = vec3(0.)
+    #     else:
+    #         if tmin < 0:
+    #             tmin = 0.
+    #         dis = tmin+0.1
+    #         while (dis < tmax):
+    #             point = pos+dis*ray
+    #             x, y, z, vol = toGridLerp(point)
+    #             temp_grad = vec13(0.0)
+    #             if real_image[i, j].w == 0.:
+    #                 temp_grad = vec13(10000.)
+    #                 for k in ti.static(range(8)):
+    #                     grad[x+k % 2, y+k//2 % 2, z+k//4 % 2] = temp_grad*vol[k]
+    #             dis += stride_length
 
 
 if __name__ == '__main__':

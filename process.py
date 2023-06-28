@@ -11,12 +11,13 @@ appendix = '.txt'
 pixels = None
 img_shape = (800, 800)
 image = None
-scale = 130.0
+scale = 110.0
 intrinsic = 1111.1110311937682
+fileName = 'Hotdog'
 
 
 def load_data():
-    dataset = 'Lego/rgb/'
+    dataset = fileName+'/rgb/'
     images = []
     print("Loading {}".format(dataset))
 
@@ -46,7 +47,7 @@ def load_data():
 
 
 def load_mat():
-    dataset = 'Lego/pose/'
+    dataset = fileName+'/pose/'
     mats = []
 
     print("Loading {}".format(dataset))

@@ -1,11 +1,10 @@
 import taichi as ti
 import taichi.math as tm
-import time
-import random
 import numpy as np
 import math
 from gmath import *
-
+import cv2
+from eval import *
 
 window_shape = (640, 480)
 
@@ -165,6 +164,9 @@ class Camera:
                 self.last_x, self.last_y = self.gui.get_cursor_pos()
             elif e.key == ti.GUI.LMB and e.type == ti.GUI.RELEASE:
                 self.mouseDown = False
+            elif e.key == ti.GUI.RMB and e.type == ti.GUI.PRESS:
+                self.save()
+                
 
         if self.mouseDown:
             x, y = self.gui.get_cursor_pos()
@@ -184,7 +186,13 @@ class Camera:
     # display the image buffer
     def display(self):
         self.gui.set_image(self.image)
+        # cv2.imwrite("./out/9.png", self.image.to_numpy()[:,:,::-1]*255.)
         self.gui.show()
+
+    def save(self):
+        print('save')
+        img=cv2.flip(cv2.transpose(self.image.to_numpy()[:,:,::-1]*255.), 0)
+        cv2.imwrite("./out/1.png", img)
 
 
 @ti.kernel

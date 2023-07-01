@@ -13,10 +13,12 @@ img_shape = (800, 800)
 image = None
 scale = 110.0
 intrinsic = 1111.1110311937682
-fileName = 'Hotdog'
 
 
-def load_data():
+def load(fileName):
+    return load_data(fileName), load_mat(fileName)
+
+def load_data(fileName):
     dataset = fileName+'/rgb/'
     images = []
     print("Loading {}".format(dataset))
@@ -46,7 +48,7 @@ def load_data():
     return images
 
 
-def load_mat():
+def load_mat(fileName):
     dataset = fileName+'/pose/'
     mats = []
 

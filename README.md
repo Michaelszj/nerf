@@ -4,9 +4,11 @@
 
 ## 环境
 - 在Windows环境下运行
-- 虚拟环境要求python版本>=3.8,如果未安装taichi,可使用以下代码安装taichi库:
+- 运行如下脚本来创建虚拟环境
 ```sh
-pip install taichi
+conda create -n plenoxels python=3.9
+conda activate plenoxels
+pip install -r requirements.txt
 ```
 
 ## 运行
